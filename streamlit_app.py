@@ -9,6 +9,7 @@ diet_type = st.selectbox("Select Diet Type:", ["High-Protein", "Vegan", "Keto", 
 llm_model = st.selectbox("Choose LLM Model:", ["GPT-4", "Llama-2", "Claude-3", "DeepSeek R1"])
 meal_type = st.selectbox("Select Meal Type:", ["Breakfast", "Lunch", "Dinner", "Snack"])
 calorie_limit = st.number_input("Enter Calorie Limit (Optional):", min_value=0, value=500, step=50)
+api_url = st.text_input("Enter API URL:", "http://localhost:5000")
 
 if st.button("Generate Recipe"):
     if not ingredients.strip():
@@ -16,7 +17,7 @@ if st.button("Generate Recipe"):
     else:
         with st.spinner("Fetching recipes..."):
             try:
-                response = requests.post("http://localhost:5000/api/get-recipe", json={
+                response = requests.post(f"{api_url}/api/get-recipe", json={
                     "ingredients": ingredients, 
                     "dietType": diet_type, 
                     "mealType": meal_type,
@@ -34,7 +35,7 @@ if st.button("Generate Recipe"):
                     st.write(recipe["instructions"])
                     
                     # Fetch nutrition data
-                    nutrition_response = requests.post("http://localhost:5000/api/get-nutrition", json={
+                    nutrition_response = requests.post(f"{api_url}/api/get-nutrition", json={
                         "recipeName": recipe["name"], 
                         "model": llm_model
                     })
@@ -46,5 +47,7 @@ if st.button("Generate Recipe"):
                     st.write(f"Carbs: {nutrition_data.get('carbs', 'N/A')}g")
                     st.write(f"Fats: {nutrition_data.get('fats', 'N/A')}g")
                     st.markdown("---")
+            except requests.exceptions.ConnectionError:
+                st.error("Failed to connect to the API. Please check the API URL and ensure the server is running.")
             except requests.exceptions.RequestException as e:
                 st.error(f"Error fetching recipes: {e}")
